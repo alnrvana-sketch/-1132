@@ -398,6 +398,29 @@
     </table>
   </div>
 </section>
+
+<!-- ================= МОДУЛЬ 4: ПОСТУПЛЕНИЕ МАТЕРИАЛОВ ================= -->
+<section id="module4" class="card" style="margin-top:24px;">
+  <h2>Модуль 4: Поступление материалов</h2>
+  <p class="hint">Заполните сведения о поступившем материале. Количество должно быть больше нуля.</p>
+  <form id="module4Form">
+    <label for="m4_date">Дата</label>
+    <input type="date" id="m4_date" name="Дата" required>
+
+    <label for="m4_material">Материал</label>
+    <input type="text" id="m4_material" name="Материал" required>
+
+    <label for="m4_quantity">Количество</label>
+    <input type="number" id="m4_quantity" name="Количество" min="0.01" step="0.01" required>
+
+    <label for="m4_unit">Единица измерения</label>
+    <input type="text" id="m4_unit" name="Единица" placeholder="Например: кг, м³, шт." required>
+
+    <button class="btn" type="submit">Сохранить в таблицу</button>
+    <p id="module4Message" class="status" role="status" aria-live="polite"></p>
+  </form>
+</section>
+
 </main>
 <script>
 function toggleTheme() {
@@ -585,6 +608,50 @@ window.addEventListener('DOMContentLoaded', () => {
   calcM1(); calcM2(); calcM3();
   buildReport();
 });
+
+document.getElementById('module4Form').addEventListener('submit', async function (e) {
+  e.preventDefault();
+  const form = this;
+  const msg = document.getElementById('module4Message');
+  const btn = form.querySelector('button[type="submit"]');
+  if (!form.reportValidity()) return;
+  const fields = {};
+  new FormData(form).forEach((value, key) => { fields[key] = String(value).trim(); });
+  for (const [name, value] of Object.entries(fields)) {
+    if (!value) {
+      msg.textContent = 'Заполните поле: ' + name;
+      msg.style.color = 'var(--err)';
+      return;
+    }
+  }
+  const quantity = Number(fields['Количество']);
+  if (!Number.isFinite(quantity) || quantity <= 0) {
+    msg.textContent = 'Количество должно быть больше нуля.';
+    msg.style.color = 'var(--err)';
+    return;
+  }
+  const dataToSend = { module: 'Вариант 3. Поступление материалов', fields };
+  btn.disabled = true;
+  msg.textContent = 'Отправка...';
+  msg.style.color = 'var(--accent)';
+  try {
+    await fetch('https://script.google.com/macros/s/AKfycbypI2MOIrYbZpvSE_swxMfiAESLfNbsZtoA_glwokrlZKrOk8Lfiw5ALCBM14oVirw/exec', {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(dataToSend)
+    });
+    msg.textContent = 'Запрос отправлен. Проверьте лист «Журнал» в Google Таблице.';
+    msg.style.color = 'var(--ok)';
+    form.reset();
+  } catch (err) {
+    msg.textContent = 'Ошибка отправки: ' + err.message;
+    msg.style.color = 'var(--err)';
+  } finally {
+    btn.disabled = false;
+  }
+});
+
 </script>
 </body>
 </html>
