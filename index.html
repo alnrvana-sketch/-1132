@@ -357,46 +357,7 @@
 </section>
 
 <!-- ================= СВОДНЫЙ ОТЧЁТ ================= -->
-<section id="tab4" class="tab-panel">
-  <div class="card">
-    <h2>📊 Сводный отчёт по проекту</h2>
-    <p class="hint">Данные актуализируются по кнопке «Сформировать отчёт».</p>
 
-    <div class="btn-row no-print">
-      <button class="btn" onclick="buildReport()">🔄 Сформировать отчёт</button>
-      <button class="btn secondary" onclick="saveProject()">💾 Сохранить проект</button>
-      <button class="btn secondary" onclick="window.print()">🖨️ Печать / Экспорт в PDF</button>
-    </div>
-    <div class="status" id="saveStatus"></div>
-
-    <div class="section-title">Модуль 1 — Пропускная способность</div>
-    <table class="report">
-      <tr><th>Параметр</th><th>Значение</th></tr>
-      <tr><td>Время прохождения t, с</td><td class="num" id="r_m1_t">—</td></tr>
-      <tr><td>Коэффициент K</td><td class="num" id="r_m1_K">—</td></tr>
-      <tr><td>Пропускная способность P, авто/ч</td><td class="num" id="r_m1_P">—</td></tr>
-      <tr><td>Интенсивность N, авто/ч</td><td class="num" id="r_m1_N">—</td></tr>
-    </table>
-
-    <div class="section-title">Модуль 2 — Коэффициент загрузки Z</div>
-    <table class="report">
-      <tr><th>Параметр</th><th>Значение</th></tr>
-      <tr><td>Интенсивность N, авто/ч</td><td class="num" id="r_m2_N">—</td></tr>
-      <tr><td>Пропускная способность P, авто/ч</td><td class="num" id="r_m2_P">—</td></tr>
-      <tr><td>Коэффициент загрузки Z</td><td class="num" id="r_m2_Z">—</td></tr>
-    </table>
-
-    <div class="section-title">Модуль 3 — Интервал автобусов</div>
-    <table class="report">
-      <tr><th>Параметр</th><th>Значение</th></tr>
-      <tr><td>Длина маршрута L, км</td><td class="num" id="r_m3_L">—</td></tr>
-      <tr><td>Скорость V, км/ч</td><td class="num" id="r_m3_V">—</td></tr>
-      <tr><td>Количество автобусов N, шт</td><td class="num" id="r_m3_N">—</td></tr>
-      <tr><td>Время оборота T, мин</td><td class="num" id="r_m3_T">—</td></tr>
-      <tr><td>Интервал I, мин</td><td class="num" id="r_m3_I">—</td></tr>
-    </table>
-  </div>
-</section>
 
 <section id="tab4" class="tab-panel">
   <div class="card">
@@ -408,6 +369,9 @@
       <button class="btn secondary" onclick="window.print()">🖨️ Печать / Экспорт в PDF</button>
     </div>
     <div class="status" id="saveStatus"></div>
+    <label for="objectName">Название объекта</label>
+    <input type="text" id="objectName" value="Инженерный дашборд — Вариант 3">
+    <button class="btn" onclick="sendReportToSheets()">☁️ Сохранить результат в Google Таблицу</button>
     <div class="section-title">Модуль 1 — Пропускная способность</div>
     <table class="report">
       <tr><th>Параметр</th><th>Значение</th></tr>
@@ -552,6 +516,42 @@ function buildReport() {
   document.getElementById('r_m3_T').textContent = fmt(m3_T, 2);
   document.getElementById('r_m3_I').textContent = fmt(m3_I, 2);
 }
+function sendReportToSheets() {
+  buildReport();
+  const objectName = document.getElementById('objectName')?.value.trim() || 'Инженерный дашборд';
+  const m1t = document.getElementById('m1_t').value;
+  const m1k = document.getElementById('m1_K').value;
+  const m1n = document.getElementById('m1_N').value;
+  const m1p = document.getElementById('r_m1_P').textContent;
+  const m2n = document.getElementById('m2_N').value;
+  const m2p = document.getElementById('m2_P').value;
+  const m2z = document.getElementById('m2_Z').textContent;
+  const m3l = document.getElementById('m3_L').value;
+  const m3v = document.getElementById('m3_V').value;
+  const m3n = document.getElementById('m3_N').value;
+  const m3i = document.getElementById('m3_I').textContent;
+  const dataToSend = {
+    objectName,
+    result: 'Модуль 1: P=' + m1p + '; Модуль 2: Z=' + m2z + '; Модуль 3: I=' + m3i,
+    inputData: 'М1: t=' + m1t + ', K=' + m1k + ', N=' + m1n +
+      '; М2: N=' + m2n + ', P=' + m2p +
+      '; М3: L=' + m3l + ', V=' + m3v + ', N=' + m3n
+  };
+  fetch('https://script.google.com/macros/s/AKfycbyRpEofU2ptaMunIkuiq7Oo_uNMy2N0btWjy2cwDw0wlGS1uplXb5I0UkA6hMEwzA5Q/exec', {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+    body: JSON.stringify(dataToSend)
+  })
+  .then(() => {
+    document.getElementById('saveStatus').textContent =
+      'Запрос отправлен. Проверьте Google Таблицу — новая строка должна появиться там.';
+  })
+  .catch(err => {
+    document.getElementById('saveStatus').textContent = 'Ошибка отправки: ' + err.message;
+  });
+}
+
 function saveProject() {
   const state = {
     m1_t: document.getElementById('m1_t').value,
