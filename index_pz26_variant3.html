@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ПЗ №26 — Анализ инженерных данных</title>
+<style>
+:root{--bg:#f4f6f9;--card:#fff;--text:#1a1f2b;--muted:#5a6472;--border:#d8dee7;--accent:#1f6feb;--soft:#e8f0fe;--ok:#1a7f37;--err:#c62828;--input:#fff}
+body.dark{--bg:#0f141c;--card:#1a2230;--text:#e8edf5;--muted:#9aa7b8;--border:#2c3a4f;--accent:#4d9fff;--soft:#102a4d;--ok:#4cd07d;--err:#ff6b6b;--input:#0f141c}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px 'Segoe UI',Arial,sans-serif}header{background:var(--card);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;position:sticky;top:0}h1{font-size:1.15rem;margin:0}main{max-width:1100px;margin:auto;padding:22px 20px 60px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}@media(max-width:800px){.grid{grid-template-columns:1fr}}.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:18px}h2{font-size:1.05rem;color:var(--accent);margin:0 0 12px}h3{font-size:.95rem;margin:16px 0 8px}.hint{font-size:.84rem;color:var(--muted);line-height:1.5}label{display:block;font-size:.85rem;color:var(--muted);font-weight:600;margin:12px 0 5px}textarea,input{width:100%;padding:11px;border:1px solid var(--border);border-radius:8px;background:var(--input);color:var(--text);font:inherit}textarea{min-height:190px;resize:vertical}.btn{border:0;border-radius:8px;padding:10px 15px;background:var(--accent);color:#fff;font-weight:600;cursor:pointer;margin:8px 6px 0 0}.btn.secondary{background:transparent;color:var(--accent);border:1px solid var(--accent)}.btn:disabled{opacity:.5;cursor:not-allowed}.result{background:var(--soft);border-radius:10px;padding:14px;margin-top:12px;line-height:1.55}.status{font-size:.85rem;color:var(--ok);min-height:1.2em;margin-top:8px}table{border-collapse:collapse;width:100%;font-size:.9rem;margin-top:10px}th,td{border:1px solid var(--border);padding:8px;text-align:left}th{background:var(--soft)}.bad{color:var(--err);font-weight:700}.good{color:var(--ok);font-weight:700}.pill{display:inline-block;background:var(--soft);padding:4px 8px;border-radius:20px;font-size:.8rem;margin:3px 4px 3px 0}.actions{display:flex;flex-wrap:wrap;gap:5px}@media print{header,.btn,.no-print{display:none!important}body{background:#fff;color:#000}main{padding:0}.card{break-inside:avoid;border:1px solid #aaa}.result,th{background:#eee;color:#000}}
+</style>
+</head>
+<body>
+<header><h1>📊 Практическое занятие №26 — Анализ инженерных данных</h1><button class="btn" onclick="toggleTheme()">🌙 Тема</button></header>
+<main>
+<div class="card">
+<h2>Назначение работы</h2>
+<p class="hint">ПЗ №26 использует данные журнала из ПЗ №25. Для варианта 3 анализируется модуль «Поступление материалов»: нужно найти разные единицы измерения у материалов, проверить отрицательные количества, определить учебную аномалию и перепроверить расчёты.</p>
+<p class="hint"><b>Важно:</b> сначала в Google Таблицах создайте копию листа «Журнал» с названием «Анализ_ПЗ26», оставьте не менее 5 строк и добавьте одну намеренную ошибку с пометкой «Учебная аномалия». Затем скопируйте таблицу целиком и вставьте её ниже.</p>
+</div>
+<div class="card">
+<h2>Шаг 1. Вставьте данные из Google Sheets</h2>
+<p class="hint">Скопируйте заголовки и строки листа «Анализ_ПЗ26» и вставьте сюда. Поддерживаются табуляция (обычное копирование из таблиц), точка с запятой и запятая. Желательные столбцы: Дата, Материал, Количество, Единица. Столбец «Примечание» или «Комментарий» поможет найти метку «Учебная аномалия».</p>
+<label for="dataInput">Данные таблицы</label>
+<textarea id="dataInput" placeholder="Дата&#9;Материал&#9;Количество&#9;Единица&#9;Примечание&#10;20.11.2026&#9;Цемент&#9;15&#9;мешок&#9;&#10;21.11.2026&#9;Песок&#9;2.5&#9;м³&#9;Учебная аномалия"></textarea>
+<div class="actions"><button class="btn" onclick="analyze()">🔍 Проанализировать данные</button><button class="btn secondary" onclick="clearAll()">Очистить</button></div>
+<div id="inputStatus" class="status" aria-live="polite"></div>
+</div>
+<div id="results" style="display:none">
+<div class="grid">
+<div class="card"><h2>Шаг 2. Итоги анализа</h2><div id="summary" class="result"></div></div>
+<div class="card"><h2>Проверка учебной аномалии</h2><div id="anomaly" class="result"></div><p class="hint">Если метка не обнаружена, проверьте, что в таблице есть ячейка с текстом «Учебная аномалия».</p></div>
+</div>
+<div class="card"><h2>Найденные проблемы и группировка</h2><div id="details"></div></div>
+<div class="card"><h2>Шаг 3. Промпт для нейросети</h2><p class="hint">Скопируйте этот запрос и вставьте его в ChatGPT, YandexGPT или GigaChat вместе с исходной таблицей.</p><textarea id="promptOutput" readonly></textarea><button class="btn" onclick="copyText('promptOutput','promptStatus')">📋 Скопировать промпт</button><div id="promptStatus" class="status"></div></div>
+<div class="card"><h2>Шаг 4. Аналитическая записка</h2><p class="hint">Черновик сформирован по вставленным данным. Перед сдачей сравните каждое число с Google Sheets и внесите результаты ручной проверки.</p><textarea id="reportOutput" style="min-height:260px"></textarea><div class="actions"><button class="btn" onclick="copyText('reportOutput','reportStatus')">📋 Скопировать записку</button><button class="btn secondary" onclick="window.print()">🖨️ Печать / PDF</button></div><div id="reportStatus" class="status"></div></div>
+<div class="card"><h2>Шаг 5. Что проверить самостоятельно</h2><ul><li>Нашла ли нейросеть строку, которую вы специально пометили?</li><li>Совпадают ли количество строк и сумма положительных/отрицательных количеств с формулами в Google Sheets?</li><li>Не придумала ли нейросеть отсутствующие сведения или нормативные нарушения?</li><li>Укажите в итоговом отчёте, что именно проверили и где ИИ ошибся (если ошибся).</li></ul></div>
+</div>
+</main>
+<script>
+let parsedRows=[], headers=[];
+function toggleTheme(){document.body.classList.toggle('dark')}
+function norm(s){return String(s||'').trim().toLowerCase().replace(/ё/g,'е')}
+function parseTable(raw){
+ const lines=raw.trim().split(/\r?\n/).filter(x=>x.trim());
+ if(!lines.length)return [];
+ const first=lines[0], delim=first.includes('\t')?'\t':(first.includes(';')?';':',');
+ return lines.map(line=>line.split(delim).map(x=>x.trim().replace(/^["']|["']$/g,'')));
+}
+function findCol(names,patterns){return names.findIndex(h=>patterns.some(p=>norm(h).includes(p)))}
+function analyze(){
+ const raw=document.getElementById('dataInput').value;
+ const matrix=parseTable(raw), status=document.getElementById('inputStatus');
+ if(matrix.length<2){status.textContent='Вставьте заголовки и хотя бы одну строку данных.';return}
+ headers=matrix[0]; const data=matrix.slice(1);
+ const mi=findCol(headers,['материал']), qi=findCol(headers,['количество','объем','объём']), ui=findCol(headers,['единиц','ед.изм','ед изм']), di=findCol(headers,['дата']), ni=findCol(headers,['примеч','коммент','описан','метк']);
+ if(mi<0||qi<0||ui<0){status.textContent='Не найдены обязательные столбцы. Нужны: Материал, Количество, Единица.';return}
+ parsedRows=data.map((r,i)=>({line:i+2,raw:r,material:r[mi]||'',qtyText:r[qi]||'',unit:r[ui]||'',date:di>=0?(r[di]||''):'',note:ni>=0?(r[ni]||''):''}));
+ const negatives=[], invalid=[], empty=[], marked=[], byMaterial={}, unitSets={}, totals={positive:0,negative:0};
+ parsedRows.forEach(r=>{
+  const q=Number(String(r.qtyText).replace(',','.').replace(/\s/g,''));
+  if(!r.material||!r.qtyText||!r.unit)empty.push(r);
+  if(r.qtyText!==''&&!Number.isFinite(q))invalid.push(r);
+  if(Number.isFinite(q)){if(q<0){negatives.push(r);totals.negative+=q}else if(q>0)totals.positive+=q}
+  if(norm(r.note).includes('учебная аномалия')||r.raw.some(v=>norm(v).includes('учебная аномалия')))marked.push(r);
+  const key=norm(r.material)||'(не указан)';
+  (byMaterial[key]??=[]).push(r);
+  (unitSets[key]??=new Set()).add(norm(r.unit));
+ });
+ const mixed=Object.entries(unitSets).filter(([k,s])=>s.size>1);
+ const counts=Object.entries(byMaterial).sort((a,b)=>b[1].length-a[1].length);
+ const fmt=n=>Number(n).toLocaleString('ru-RU',{maximumFractionDigits:3});
+ document.getElementById('summary').innerHTML='<b>Строк данных:</b> '+parsedRows.length+'<br><b>Разных материалов:</b> '+counts.length+'<br><b>Чаще всего встречается:</b> '+(counts[0]?counts[0][1][0].material+' ('+counts[0][1].length+' записей)':'нет данных')+'<br><b>Сумма положительных количеств:</b> '+fmt(totals.positive)+'<br><b>Сумма отрицательных количеств:</b> '+fmt(totals.negative)+'<br><b>Отрицательные значения:</b> '+negatives.length+'<br><b>Пустые обязательные поля:</b> '+empty.length+'<br><b>Некорректные числа:</b> '+invalid.length+'<br><b>Материалы с разными единицами:</b> '+mixed.length;
+ document.getElementById('anomaly').innerHTML=marked.length?'<span class="good">Метка найдена</span><br>'+marked.map(r=>'Строка '+r.line+': '+escapeHtml(r.raw.join(' | '))).join('<br>'):'<span class="bad">Метка «Учебная аномалия» не обнаружена.</span><br>Проверьте вставленные данные и столбец примечаний.';
+ let detail='<h3>Материалы и единицы измерения</h3><table><tr><th>Материал</th><th>Количество записей</th><th>Единицы</th></tr>';
+ counts.forEach(([k,rs])=>{const units=[...unitSets[k]];detail+='<tr><td>'+escapeHtml(rs[0].material||'(не указан)')+'</td><td>'+rs.length+'</td><td>'+units.map(escapeHtml).join(', ')+(units.length>1?' <span class="bad">— проверить</span>':'')+'</td></tr>'});detail+='</table>';
+ function issueTable(title,arr){if(!arr.length)return '<h3>'+title+'</h3><p class="good">Не обнаружено.</p>';return '<h3>'+title+'</h3><table><tr><th>Строка</th><th>Материал</th><th>Количество</th><th>Единица</th><th>Примечание</th></tr>'+arr.map(r=>'<tr><td>'+r.line+'</td><td>'+escapeHtml(r.material)+'</td><td class="bad">'+escapeHtml(r.qtyText)+'</td><td>'+escapeHtml(r.unit)+'</td><td>'+escapeHtml(r.note)+'</td></tr>').join('')+'</table>'}
+ detail+=issueTable('Отрицательные количества',negatives)+issueTable('Пустые обязательные поля',empty)+issueTable('Некорректные числовые значения',invalid);
+ if(mixed.length)detail+='<h3>Материалы с разными единицами</h3><p>'+mixed.map(([k,s])=>escapeHtml(k)+': '+[...s].map(escapeHtml).join(', ')).join('<br>')+'</p>';
+ document.getElementById('details').innerHTML=detail;
+ const task='Найти материалы с разными единицами измерения; проверить отрицательные количества.';
+ document.getElementById('promptOutput').value='Ты — ИИ-помощник по анализу данных. Я передаю тебе выгрузку из строительного журнала. Моя задача: '+task+' Выполни: 1. Найди пустые, отрицательные или странные значения, относящиеся к моей задаче. 2. Посчитай необходимые итоги и количество записей по материалам. 3. Найди специальную «Учебную аномалию» (она добавлена намеренно). 4. Подготовь краткий текст для аналитической записки. Правила: не выдумывай данные; не утверждай, что нарушены строительные нормы, так как нормативы не заданы; если данных не хватает, прямо скажи; для каждой ошибки указывай номер строки или значение.\n\nДанные:\n'+raw;
+ document.getElementById('reportOutput').value='АНАЛИТИЧЕСКАЯ ЗАПИСКА ПО РЕЗУЛЬТАТАМ АНАЛИЗА ЖУРНАЛА\n\nЦель анализа: проверить записи модуля «Поступление материалов» (вариант 3): выявить материалы с разными единицами измерения и отрицательные количества.\n\nОбъём выборки: проанализировано строк данных — '+parsedRows.length+'. Уникальных материалов — '+counts.length+'.\n\nРезультаты: чаще всего встречается материал «'+(counts[0]?counts[0][1][0].material:'не определён')+'» ('+(counts[0]?counts[0][1].length:0)+' записей). Сумма положительных количеств — '+fmt(totals.positive)+'. Сумма отрицательных количеств — '+fmt(totals.negative)+'. Отрицательных значений — '+negatives.length+'. Материалов с разными единицами — '+mixed.length+'. Пустых обязательных полей — '+empty.length+'. Некорректных чисел — '+invalid.length+'.\n\nУчебная аномалия: '+(marked.length?'обнаружена в строке(ах) '+marked.map(r=>r.line).join(', '):'не обнаружена в переданных данных; требуется проверить отметку в Google Sheets')+'.\n\nОграничения: по этим данным нельзя определить качество материалов, соответствие нормативам или причины ошибок; для этого нужны дополнительные сведения. Количества с разными единицами нельзя суммировать между собой без приведения к общей единице измерения.\n\nВывод: проверить отмеченные строки, единицы измерения для каждого материала и отрицательные значения. Все суммы и количества необходимо независимо перепроверить формулами/фильтрами в Google Sheets.\n\nРезультат ручной проверки студентом: [внести после проверки в Google Sheets].';
+ document.getElementById('results').style.display='block';status.textContent='Анализ выполнен. Обязательно перепроверьте итоги в Google Sheets.';
+}
+function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function copyText(id,statusId){const el=document.getElementById(id);el.select();try{document.execCommand('copy');document.getElementById(statusId).textContent='Скопировано.'}catch(e){document.getElementById(statusId).textContent='Выделите текст и скопируйте вручную.'}}
+function clearAll(){document.getElementById('dataInput').value='';document.getElementById('results').style.display='none';document.getElementById('inputStatus').textContent=''}
+</script>
+</body>
+</html>
