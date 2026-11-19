@@ -591,11 +591,14 @@ function sendReportToSheets() {
   const m3n = document.getElementById('m3_N').value;
   const m3i = document.getElementById('m3_I').textContent;
   const dataToSend = {
-    objectName,
-    result: 'Модуль 1: P=' + m1p + '; Модуль 2: Z=' + m2z + '; Модуль 3: I=' + m3i,
-    inputData: 'М1: t=' + m1t + ', K=' + m1k + ', N=' + m1n +
-      '; М2: N=' + m2n + ', P=' + m2p +
-      '; М3: L=' + m3l + ', V=' + m3v + ', N=' + m3n
+    module: 'ПЗ №24. Сводный отчёт инженерного дашборда',
+    fields: {
+      'Название объекта': objectName,
+      'Результат расчётов': 'Модуль 1: P=' + m1p + '; Модуль 2: Z=' + m2z + '; Модуль 3: I=' + m3i,
+      'Исходные данные': 'М1: t=' + m1t + ', K=' + m1k + ', N=' + m1n +
+        '; М2: N=' + m2n + ', P=' + m2p +
+        '; М3: L=' + m3l + ', V=' + m3v + ', N=' + m3n
+    }
   };
   fetch('https://script.google.com/macros/s/AKfycbypI2MOIrYbZpvSE_swxMfiAESLfNbsZtoA_glwokrlZKrOk8Lfiw5ALCBM14oVirw/exec', {
     method: 'POST',
