@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Инженерный дашборд — Вариант 3</title>
+<style>
+  :root {
+    --bg: #f4f6f9;
+    --card: #ffffff;
+    --text: #1a1f2b;
+    --muted: #5a6472;
+    --border: #d8dee7;
+    --accent: #1f6feb;
+    --accent-2: #0b4fbf;
+    --result-bg: #e8f0fe;
+    --result-text: #0b3d91;
+    --ok: #1a7f37;
+    --err: #c62828;
+    --input-bg: #ffffff;
+  }
+  body.dark {
+    --bg: #0f141c;
+    --card: #1a2230;
+    --text: #e8edf5;
+    --muted: #9aa7b8;
+    --border: #2c3a4f;
+    --accent: #4d9fff;
+    --accent-2: #2f7fe0;
+    --result-bg: #102a4d;
+    --result-text: #9cc4ff;
+    --ok: #4cd07d;
+    --err: #ff6b6b;
+    --input-bg: #0f141c;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    transition: background .25s, color .25s;
+    min-height: 100vh;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 24px;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    flex-wrap: wrap;
+  }
+  header h1 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: .2px;
+  }
+  .theme-btn {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: .9rem;
+    font-weight: 600;
+  }
+  .theme-btn:hover { background: var(--accent-2); }
+
+  nav.tabs {
+    display: flex;
+    gap: 6px;
+    padding: 12px 24px 0;
+    flex-wrap: wrap;
+    background: var(--bg);
+  }
+  nav.tabs button {
+    background: transparent;
+    border: 1px solid transparent;
+    border-bottom: none;
+    color: var(--muted);
+    padding: 10px 16px;
+    border-radius: 10px 10px 0 0;
+    cursor: pointer;
+    font-size: .92rem;
+    font-weight: 600;
+    transition: .15s;
+  }
+  nav.tabs button:hover { color: var(--text); }
+  nav.tabs button.active {
+    background: var(--card);
+    color: var(--accent);
+    border-color: var(--border);
+  }
+
+  main { padding: 20px 24px 60px; max-width: 1200px; margin: 0 auto; }
+  .tab-panel { display: none; animation: fade .2s ease; }
+  .tab-panel.active { display: block; }
+  @keyframes fade { from { opacity: 0; transform: translateY(6px);} to {opacity:1; transform:none;} }
+
+  .panel-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  @media (max-width: 820px) { .panel-grid { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+  }
+  .card h2 {
+    font-size: 1.05rem;
+    margin-bottom: 14px;
+    color: var(--accent);
+  }
+  .card h3 { font-size: .95rem; margin: 16px 0 8px; }
+
+  label {
+    display: block;
+    font-size: .85rem;
+    color: var(--muted);
+    margin: 10px 0 4px;
+    font-weight: 600;
+  }
+  input[type="number"], input[type="text"] {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--input-bg);
+    color: var(--text);
+    font-size: .95rem;
+    outline: none;
+    transition: border .15s;
+  }
+  input:focus { border-color: var(--accent); }
+  input.invalid { border-color: var(--err); }
+  .hint { font-size: .78rem; color: var(--muted); margin-top: 4px; }
+  .err-msg { color: var(--err); font-size: .8rem; margin-top: 4px; min-height: 1em; }
+
+  .result-box {
+    background: var(--result-bg);
+    color: var(--result-text);
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 16px;
+    display: grid;
+    gap: 10px;
+  }
+  .result-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: .95rem;
+    gap: 10px;
+  }
+  .result-row .val {
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: .3px;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 9px;
+    cursor: pointer;
+    font-size: .9rem;
+    font-weight: 600;
+    margin-top: 14px;
+    transition: background .15s;
+  }
+  .btn:hover { background: var(--accent-2); }
+  .btn.secondary {
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+  }
+  .btn.secondary:hover { background: rgba(31,111,235,.1); }
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  table.report {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: .9rem;
+  }
+  table.report th, table.report td {
+    border: 1px solid var(--border);
+    padding: 8px 10px;
+    text-align: left;
+  }
+  table.report th {
+    background: var(--result-bg);
+    color: var(--result-text);
+    font-weight: 700;
+  }
+  table.report td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .section-title {
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 20px 0 8px;
+    color: var(--accent);
+  }
+
+  .status {
+    font-size: .85rem;
+    color: var(--ok);
+    min-height: 1.2em;
+    margin-top: 8px;
+  }
+
+  @media print {
+    header, nav.tabs, .btn, .btn-row, .theme-btn { display: none !important; }
+    body { background: #fff !important; color: #000 !important; }
+    main { padding: 0; max-width: 100%; }
+    .card { border: 1px solid #000; border-radius: 0; page-break-inside: avoid; }
+    .result-box { background: #fff !important; color: #000 !important; border: 1px solid #000; }
+    table.report th { background: #eee !important; color: #000 !important; }
+    table.report th, table.report td { border: 1px solid #000 !important; }
+    .tab-panel { display: block !important; }
+    .tab-panel:not(.active) { display: none !important; }
+    .no-print { display: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🛣️ Инженерный дашборд — Вариант 3</h1>
+  <button class="theme-btn" id="themeToggle" onclick="toggleTheme()">🌙 Тёмная тема</button>
+</header>
+
+<nav class="tabs" id="tabs">
+  <button class="active" data-tab="tab1" onclick="switchTab(event,'tab1')">Модуль 1: Пропускная способность</button>
+  <button data-tab="tab2" onclick="switchTab(event,'tab2')">Модуль 2: Коэффициент загрузки Z</button>
+  <button data-tab="tab3" onclick="switchTab(event,'tab3')">Модуль 3: Интервал автобусов</button>
+  <button data-tab="tab4" onclick="switchTab(event,'tab4')">Сводный отчёт</button>
+  <button data-tab="tab5" onclick="switchTab(event,'tab5')">ПЗ №27–30: Сужение русла</button>
+</nav>
+
+<main>
+
+<!-- ================= МОДУЛЬ 1 ================= -->
+<section id="tab1" class="tab-panel active">
+  <div class="panel-grid">
+    <div class="card">
+      <h2>Модуль 1 — Пропускная способность</h2>
+      <p class="hint">Формула: P = 3600 / t × K (авто/ч)</p>
+
+      <label for="m1_t">Время прохождения (t), с</label>
+      <input type="number" id="m1_t" value="2" min="0.01" step="0.01" oninput="calcM1()">
+      <div class="err-msg" id="m1_t_err"></div>
+
+      <label for="m1_K">Коэффициент K (0.7–1.0)</label>
+      <input type="number" id="m1_K" value="0.9" min="0" max="1" step="0.01" oninput="calcM1()">
+      <div class="err-msg" id="m1_K_err"></div>
+
+      <div class="result-box">
+        <div class="result-row"><span>Пропускная способность P:</span><span class="val" id="m1_P">—</span></div>
+        <div class="result-row"><span>Интенсивность (передаётся):</span><span class="val" id="m1_N_display">—</span></div>
+      </div>
+
+      <label for="m1_N">Интенсивность N, авто/ч (вход для передачи)</label>
+      <input type="number" id="m1_N" value="1500" min="0" step="1" oninput="calcM1()">
+
+      <button class="btn" onclick="transfer('m1','m2')">➡️ Передать интенсивность в Модуль 2</button>
+    </div>
+    <div class="card">
+      <h2>📘 Справка по модулю</h2>
+      <p class="hint">Пропускная способность — максимальное число автомобилей, проходящих через сечение дороги в единицу времени.</p>
+      <h3>Формула</h3>
+      <p><code>P = 3600 / t × K</code>, где t — время прохождения, K — коэффициент условий (0.7–1.0).</p>
+      <h3>Передача данных</h3>
+      <p>В Модуль 2 передаётся <b>интенсивность N</b> (авто/ч), которая используется для расчёта коэффициента загрузки Z = N / P.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= МОДУЛЬ 2 ================= -->
+<section id="tab2" class="tab-panel">
+  <div class="panel-grid">
+    <div class="card">
+      <h2>Модуль 2 — Коэффициент загрузки Z</h2>
+      <p class="hint">Формула: Z = N / P</p>
+
+      <label for="m2_N">Интенсивность N, авто/ч</label>
+      <input type="number" id="m2_N" value="1500" min="0" step="1" oninput="calcM2()">
+      <div class="err-msg" id="m2_N_err"></div>
+
+      <label for="m2_P">Пропускная способность P, авто/ч</label>
+      <input type="number" id="m2_P" value="1620" min="0" step="1" oninput="calcM2()">
+      <div class="err-msg" id="m2_P_err"></div>
+
+      <div class="result-box">
+        <div class="result-row"><span>Коэффициент загрузки Z:</span><span class="val" id="m2_Z">—</span></div>
+      </div>
+
+      <button class="btn" onclick="transfer('m2','m3')">➡️ Передать интенсивность в Модуль 3</button>
+    </div>
+    <div class="card">
+      <h2>📘 Справка по модулю</h2>
+      <p class="hint">Коэффициент загрузки Z показывает долю использования пропускной способности.</p>
+      <h3>Формула</h3>
+      <p><code>Z = N / P</code>, где N — интенсивность (авто/ч), P — пропускная способность (авто/ч).</p>
+      <h3>Передача данных</h3>
+      <p>В Модуль 3 передаётся <b>интенсивность N</b> для расчёта интервала движения автобусов.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= МОДУЛЬ 3 ================= -->
+<section id="tab3" class="tab-panel">
+  <div class="panel-grid">
+    <div class="card">
+      <h2>Модуль 3 — Интервал автобусов</h2>
+      <p class="hint">Формулы: T = 2L / V × 60; I = T / N</p>
+
+      <label for="m3_L">Длина маршрута L, км</label>
+      <input type="number" id="m3_L" value="12" min="0.1" step="0.1" oninput="calcM3()">
+      <div class="err-msg" id="m3_L_err"></div>
+
+      <label for="m3_V">Скорость V, км/ч</label>
+      <input type="number" id="m3_V" value="40" min="0.1" step="0.1" oninput="calcM3()">
+      <div class="err-msg" id="m3_V_err"></div>
+
+      <label for="m3_N">Количество автобусов N, шт</label>
+      <input type="number" id="m3_N" value="10" min="1" step="1" oninput="calcM3()">
+      <div class="err-msg" id="m3_N_err"></div>
+
+      <div class="result-box">
+        <div class="result-row"><span>Время оборота T, мин:</span><span class="val" id="m3_T">—</span></div>
+        <div class="result-row"><span>Интервал I, мин:</span><span class="val" id="m3_I">—</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>📘 Справка по модулю</h2>
+      <p class="hint">Расчёт интервала движения автобусов на маршруте.</p>
+      <h3>Формулы</h3>
+      <p><code>T = 2L / V × 60</code> — время оборота, мин.<br>
+         <code>I = T / N</code> — интервал, мин.</p>
+      <h3>Передача данных</h3>
+      <p>Сюда приходит <b>интенсивность N</b> из Модуля 2 (используется как число автобусов).</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= СВОДНЫЙ ОТЧЁТ ================= -->
+
+
+<section id="tab4" class="tab-panel">
+  <div class="card">
+    <h2>📊 Сводный отчёт по проекту</h2>
+    <p class="hint">Данные актуализируются по кнопке «Сформировать отчёт».</p>
+    <div class="btn-row no-print">
+      <button class="btn" onclick="buildReport()">🔄 Сформировать отчёт</button>
+      <button class="btn secondary" onclick="saveProject()">💾 Сохранить проект</button>
+      <button class="btn secondary" onclick="window.print()">🖨️ Печать / Экспорт в PDF</button>
+    </div>
+    <div class="status" id="saveStatus"></div>
+    <label for="objectName">Название объекта</label>
+    <input type="text" id="objectName" value="Инженерный дашборд — Вариант 3">
+    <button class="btn" onclick="sendReportToSheets()">☁️ Сохранить результат в Google Таблицу</button>
+    <div class="section-title">Модуль 1 — Пропускная способность</div>
+    <table class="report">
+      <tr><th>Параметр</th><th>Значение</th></tr>
+      <tr><td>Время прохождения t, с</td><td class="num" id="r_m1_t">—</td></tr>
+      <tr><td>Коэффициент K</td><td class="num" id="r_m1_K">—</td></tr>
+      <tr><td>Пропускная способность P, авто/ч</td><td class="num" id="r_m1_P">—</td></tr>
+      <tr><td>Интенсивность N, авто/ч</td><td class="num" id="r_m1_N">—</td></tr>
+    </table>
+    <div class="section-title">Модуль 2 — Коэффициент загрузки Z</div>
+    <table class="report">
+      <tr><th>Параметр</th><th>Значение</th></tr>
+      <tr><td>Интенсивность N, авто/ч</td><td class="num" id="r_m2_N">—</td></tr>
+      <tr><td>Пропускная способность P, авто/ч</td><td class="num" id="r_m2_P">—</td></tr>
+      <tr><td>Коэффициент загрузки Z</td><td class="num" id="r_m2_Z">—</td></tr>
+    </table>
+    <div class="section-title">Модуль 3 — Интервал автобусов</div>
+    <table class="report">
+      <tr><th>Параметр</th><th>Значение</th></tr>
+      <tr><td>Длина маршрута L, км</td><td class="num" id="r_m3_L">—</td></tr>
+      <tr><td>Скорость V, км/ч</td><td class="num" id="r_m3_V">—</td></tr>
+      <tr><td>Количество автобусов N, шт</td><td class="num" id="r_m3_N">—</td></tr>
+      <tr><td>Время оборота T, мин</td><td class="num" id="r_m3_T">—</td></tr>
+      <tr><td>Интервал I, мин</td><td class="num" id="r_m3_I">—</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ================= МОДУЛЬ 4: ПОСТУПЛЕНИЕ МАТЕРИАЛОВ ================= -->
+<section id="module4" class="card" style="margin-top:24px;">
+  <h2>Модуль 4: Поступление материалов</h2>
+  <p class="hint">Заполните сведения о поступившем материале. Количество должно быть больше нуля.</p>
+  <form id="module4Form">
+    <label for="m4_date">Дата</label>
+    <input type="date" id="m4_date" name="Дата" required>
+
+    <label for="m4_material">Материал</label>
+    <input type="text" id="m4_material" name="Материал" required>
+
+    <label for="m4_quantity">Количество</label>
+    <input type="number" id="m4_quantity" name="Количество" min="0.01" step="0.01" required>
+
+    <label for="m4_unit">Единица измерения</label>
+    <input type="text" id="m4_unit" name="Единица" placeholder="Например: кг, м³, шт." required>
+
+    <button class="btn" type="submit">Сохранить в таблицу</button>
+    <p id="module4Message" class="status" role="status" aria-live="polite"></p>
+  </form>
+</section>
+
+
+<section id="tab5" class="tab-panel">
+<div class="panel-grid">
+<div class="card">
+<h2>Мини-проект «Инженерный помощник» — вариант 3</h2>
+<p class="hint">Сужение устойчивого русла мостовым переходом. Учебная предварительная проверка по пункту 5.28 СП 35.13330.2011.</p>
+<label for="riverStableWidth">Устойчивая ширина русла, м</label>
+<input type="number" id="riverStableWidth" min="0.01" step="0.01" placeholder="Например, 42">
+<label for="bridgeClearOpening">Отверстие моста в свету (чистая ширина), м</label>
+<input type="number" id="bridgeClearOpening" min="0.01" step="0.01" placeholder="Например, 45">
+<label for="bridgeTotalLength">Общая длина моста, м (справочно — не подставлять вместо отверстия в свету)</label>
+<input type="number" id="bridgeTotalLength" min="0.01" step="0.01" placeholder="Например, 60">
+<p class="hint">Граничная ловушка: общая длина моста не равна чистой ширине отверстия. Для проверки используется именно отверстие в свету.</p>
+<button class="btn" type="button" onclick="calculateRiverNarrowing()">Рассчитать проверку</button>
+<div class="result-box" aria-live="polite">
+<div class="result-row"><span>Разница ширин:</span><span class="val" id="riverWidthDifference">—</span></div>
+<div class="result-row"><span>Отношение отверстия к руслу:</span><span class="val" id="riverWidthRatio">—</span></div>
+<div class="result-row"><span>Инженерное заключение:</span><span class="val" id="riverConclusion">Ожидание ввода</span></div>
+</div>
+<p class="hint" id="riverWarning" role="status" aria-live="polite"></p>
+<button class="btn" type="button" onclick="saveRiverCheckToSheets()">Сохранить расчёт в Google Sheets</button>
+<p class="status" id="riverSaveStatus"></p>
+</div>
+<div class="card">
+<h2>Нормативная основа</h2>
+<p>Пункт 5.28 СП 35.13330.2011 требует учитывать подпор, естественную деформацию русла, устойчивое уширение подмостового русла, общий и местный размывы. Отверстие моста в свету не должно быть меньше устойчивой ширины русла.</p>
+<h3>Проверочное условие</h3>
+<p><code>Bсвет ≥ Bуст</code></p>
+<p class="hint">Bсвет — чистая ширина отверстия моста; Bуст — устойчивая ширина русла. Разница и отношение ширин — вспомогательные показатели интерфейса, не отдельные нормативные коэффициенты.</p>
+<h3>Ограничение</h3>
+<p class="hint">Это упрощённая проверка одного условия пункта 5.28, а не полный гидравлический расчёт мостового перехода. Окончательные размеры определяют с учётом всех факторов и инженерных изысканий.</p>
+<p><a href="https://www.mos.ru/upload/documents/files/4784/SP35133302011MostiitrybiAktyalizirovannayaredakciyaSNiP20503-84%28sIzmeneniemN1%29_Tekst.pdf" target="_blank" rel="noopener">Открыть текст СП 35.13330.2011</a></p>
+</div>
+</div>
+</section>
+
+</main>
+<script>
+function toggleTheme() {
+  document.body.classList.toggle('dark');
+  const btn = document.getElementById('themeToggle');
+  const dark = document.body.classList.contains('dark');
+  btn.textContent = dark ? '☀️ Светлая тема' : '🌙 Тёмная тема';
+  localStorage.setItem('dash_theme', dark ? 'dark' : 'light');
+}
+(function initTheme(){
+  const saved = localStorage.getItem('dash_theme');
+  if (saved === 'dark') { document.body.classList.add('dark'); document.getElementById('themeToggle').textContent = '☀️ Светлая тема'; }
+})();
+function switchTab(e, id) {
+  if (e) e.preventDefault();
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav.tabs button').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  e.currentTarget.classList.add('active');
+}
+function num(id) {
+  const el = document.getElementById(id);
+  return el ? parseFloat(el.value) : NaN;
+}
+function setErr(id, msg) {
+  const el = document.getElementById(id + '_err');
+  const inp = document.getElementById(id);
+  if (el) el.textContent = msg || '';
+  if (inp) inp.classList.toggle('invalid', !!msg);
+}
+function validatePositive(id, label) {
+  const v = num(id);
+  if (isNaN(v)) { setErr(id, 'Введите число'); return false; }
+  if (v < 0) { setErr(id, label + ': значение не может быть отрицательным'); return false; }
+  setErr(id, '');
+  return true;
+}
+function calcM1() {
+  const okT = validatePositive('m1_t', 'Время');
+  const okK = validatePositive('m1_K', 'Коэффициент K');
+  const t = num('m1_t'), K = num('m1_K');
+  if (okT && okK && t > 0) {
+    const P = 3600 / t * K;
+    document.getElementById('m1_P').textContent = P.toFixed(2) + ' авто/ч';
+    const N = num('m1_N');
+    document.getElementById('m1_N_display').textContent = (isNaN(N) ? '—' : N.toFixed(0) + ' авто/ч');
+  } else {
+    document.getElementById('m1_P').textContent = '—';
+    document.getElementById('m1_N_display').textContent = '—';
+  }
+}
+function calcM2() {
+  const okN = validatePositive('m2_N', 'Интенсивность');
+  const okP = validatePositive('m2_P', 'Пропускная способность');
+  const N = num('m2_N'), P = num('m2_P');
+  if (okN && okP && P > 0) {
+    const Z = N / P;
+    document.getElementById('m2_Z').textContent = Z.toFixed(4);
+  } else document.getElementById('m2_Z').textContent = '—';
+}
+function calcM3() {
+  const okL = validatePositive('m3_L', 'Длина');
+  const okV = validatePositive('m3_V', 'Скорость');
+  const okN = validatePositive('m3_N', 'Количество');
+  const L = num('m3_L'), V = num('m3_V'), N = num('m3_N');
+  if (okL && okV && okN && V > 0 && N > 0) {
+    const T = 2 * L / V * 60, I = T / N;
+    document.getElementById('m3_T').textContent = T.toFixed(2) + ' мин';
+    document.getElementById('m3_I').textContent = I.toFixed(2) + ' мин';
+  } else {
+    document.getElementById('m3_T').textContent = '—';
+    document.getElementById('m3_I').textContent = '—';
+  }
+}
+function transfer(from, to) {
+  if (from === 'm1' && to === 'm2') {
+    const N = num('m1_N');
+    if (isNaN(N) || N < 0) { alert('Введите корректную интенсивность N в Модуле 1'); return; }
+    document.getElementById('m2_N').value = N;
+    calcM2();
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('nav.tabs button').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab2').classList.add('active');
+    document.querySelector('nav.tabs button[data-tab="tab2"]').classList.add('active');
+  }
+  if (from === 'm2' && to === 'm3') {
+    const N = num('m2_N');
+    if (isNaN(N) || N < 0) { alert('Введите корректную интенсивность N в Модуле 2'); return; }
+    document.getElementById('m3_N').value = Math.max(1, Math.round(N));
+    calcM3();
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('nav.tabs button').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab3').classList.add('active');
+    document.querySelector('nav.tabs button[data-tab="tab3"]').classList.add('active');
+  }
+}
+function buildReport() {
+  const fmt = (v, d=2) => isNaN(v) ? '—' : Number(v).toFixed(d);
+  const m1_t = num('m1_t'), m1_K = num('m1_K'), m1_N = num('m1_N');
+  const m1_P = (!isNaN(m1_t) && m1_t > 0) ? 3600 / m1_t * m1_K : NaN;
+  document.getElementById('r_m1_t').textContent = fmt(m1_t, 2);
+  document.getElementById('r_m1_K').textContent = fmt(m1_K, 2);
+  document.getElementById('r_m1_P').textContent = fmt(m1_P, 2);
+  document.getElementById('r_m1_N').textContent = fmt(m1_N, 0);
+  const m2_N = num('m2_N'), m2_P = num('m2_P');
+  const m2_Z = (m2_P > 0) ? m2_N / m2_P : NaN;
+  document.getElementById('r_m2_N').textContent = fmt(m2_N, 0);
+  document.getElementById('r_m2_P').textContent = fmt(m2_P, 2);
+  document.getElementById('r_m2_Z').textContent = fmt(m2_Z, 4);
+  const m3_L = num('m3_L'), m3_V = num('m3_V'), m3_N = num('m3_N');
+  const m3_T = (m3_V > 0) ? 2 * m3_L / m3_V * 60 : NaN;
+  const m3_I = (m3_N > 0 && !isNaN(m3_T)) ? m3_T / m3_N : NaN;
+  document.getElementById('r_m3_L').textContent = fmt(m3_L, 1);
+  document.getElementById('r_m3_V').textContent = fmt(m3_V, 1);
+  document.getElementById('r_m3_N').textContent = fmt(m3_N, 0);
+  document.getElementById('r_m3_T').textContent = fmt(m3_T, 2);
+  document.getElementById('r_m3_I').textContent = fmt(m3_I, 2);
+}
+function sendReportToSheets() {
+  buildReport();
+  const objectName = document.getElementById('objectName')?.value.trim() || 'Инженерный дашборд';
+  const m1t = document.getElementById('m1_t').value;
+  const m1k = document.getElementById('m1_K').value;
+  const m1n = document.getElementById('m1_N').value;
+  const m1p = document.getElementById('r_m1_P').textContent;
+  const m2n = document.getElementById('m2_N').value;
+  const m2p = document.getElementById('m2_P').value;
+  const m2z = document.getElementById('m2_Z').textContent;
+  const m3l = document.getElementById('m3_L').value;
+  const m3v = document.getElementById('m3_V').value;
+  const m3n = document.getElementById('m3_N').value;
+  const m3i = document.getElementById('m3_I').textContent;
+  const dataToSend = {
+    objectName,
+    result: 'Модуль 1: P=' + m1p + '; Модуль 2: Z=' + m2z + '; Модуль 3: I=' + m3i,
+    inputData: 'М1: t=' + m1t + ', K=' + m1k + ', N=' + m1n +
+      '; М2: N=' + m2n + ', P=' + m2p +
+      '; М3: L=' + m3l + ', V=' + m3v + ', N=' + m3n
+  };
+  fetch('https://script.google.com/macros/s/AKfycbypI2MOIrYbZpvSE_swxMfiAESLfNbsZtoA_glwokrlZKrOk8Lfiw5ALCBM14oVirw/exec', {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+    body: JSON.stringify(dataToSend)
+  })
+  .then(() => {
+    document.getElementById('saveStatus').textContent =
+      'Запрос отправлен. Проверьте Google Таблицу — новая строка должна появиться там.';
+  })
+  .catch(err => {
+    document.getElementById('saveStatus').textContent = 'Ошибка отправки: ' + err.message;
+  });
+}
+
+function saveProject() {
+  const state = {
+    m1_t: document.getElementById('m1_t').value,
+    m1_K: document.getElementById('m1_K').value,
+    m1_N: document.getElementById('m1_N').value,
+    m2_N: document.getElementById('m2_N').value,
+    m2_P: document.getElementById('m2_P').value,
+    m3_L: document.getElementById('m3_L').value,
+    m3_V: document.getElementById('m3_V').value,
+    m3_N: document.getElementById('m3_N').value,
+    theme: document.body.classList.contains('dark') ? 'dark' : 'light'
+  };
+  localStorage.setItem('dash_state', JSON.stringify(state));
+  document.getElementById('saveStatus').textContent = '✅ Проект сохранён в localStorage (' + new Date().toLocaleTimeString() + ')';
+}
+function loadProject() {
+  const raw = localStorage.getItem('dash_state');
+  if (!raw) return;
+  try {
+    const s = JSON.parse(raw);
+    for (const k in s) {
+      if (k === 'theme') continue;
+      const el = document.getElementById(k);
+      if (el) el.value = s[k];
+    }
+    if (s.theme === 'dark') { document.body.classList.add('dark'); document.getElementById('themeToggle').textContent = '☀️ Светлая тема'; }
+  } catch(e) {}
+}
+window.addEventListener('DOMContentLoaded', () => {
+  loadProject();
+  calcM1(); calcM2(); calcM3();
+  buildReport();
+});
+
+document.getElementById('module4Form').addEventListener('submit', async function (e) {
+  e.preventDefault();
+  const form = this;
+  const msg = document.getElementById('module4Message');
+  const btn = form.querySelector('button[type="submit"]');
+  if (!form.reportValidity()) return;
+  const fields = {};
+  new FormData(form).forEach((value, key) => { fields[key] = String(value).trim(); });
+  for (const [name, value] of Object.entries(fields)) {
+    if (!value) {
+      msg.textContent = 'Заполните поле: ' + name;
+      msg.style.color = 'var(--err)';
+      return;
+    }
+  }
+  const quantity = Number(fields['Количество']);
+  if (!Number.isFinite(quantity) || quantity <= 0) {
+    msg.textContent = 'Количество должно быть больше нуля.';
+    msg.style.color = 'var(--err)';
+    return;
+  }
+  const dataToSend = { module: 'Вариант 3. Поступление материалов', fields };
+  btn.disabled = true;
+  msg.textContent = 'Отправка...';
+  msg.style.color = 'var(--accent)';
+  try {
+    await fetch('https://script.google.com/macros/s/AKfycbypI2MOIrYbZpvSE_swxMfiAESLfNbsZtoA_glwokrlZKrOk8Lfiw5ALCBM14oVirw/exec', {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(dataToSend)
+    });
+    msg.textContent = 'Запрос отправлен. Проверьте лист «Журнал» в Google Таблице.';
+    msg.style.color = 'var(--ok)';
+    form.reset();
+  } catch (err) {
+    msg.textContent = 'Ошибка отправки: ' + err.message;
+    msg.style.color = 'var(--err)';
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+
+function calculateRiverNarrowing() {
+ const a=document.getElementById('riverStableWidth'), b=document.getElementById('bridgeClearOpening'), c=document.getElementById('bridgeTotalLength');
+ const out=document.getElementById('riverConclusion'), warn=document.getElementById('riverWarning');
+ [a,b,c].forEach(x=>x.classList.remove('invalid'));
+ const stable=Number(a.value), clear=Number(b.value), total=c.value===''?null:Number(c.value);
+ if(a.value===''||!Number.isFinite(stable)||stable<=0||b.value===''||!Number.isFinite(clear)||clear<=0||(total!==null&&(!Number.isFinite(total)||total<=0))){
+  if(a.value===''||!Number.isFinite(stable)||stable<=0)a.classList.add('invalid');
+  if(b.value===''||!Number.isFinite(clear)||clear<=0)b.classList.add('invalid');
+  if(total!==null&&(!Number.isFinite(total)||total<=0))c.classList.add('invalid');
+  out.textContent='Ошибка: проверьте значения';out.style.color='var(--err)';warn.textContent='Ширины должны быть положительными числами.';return null;
+ }
+ if(total!==null&&clear>total){b.classList.add('invalid');out.textContent='Ошибка проверки размеров';out.style.color='var(--err)';warn.textContent='Отверстие в свету не может быть больше общей длины моста. Возможно, перепутаны поля.';return null;}
+ const difference=clear-stable, ratio=clear/stable;
+ document.getElementById('riverWidthDifference').textContent=difference.toFixed(2)+' м';
+ document.getElementById('riverWidthRatio').textContent=ratio.toFixed(3);
+ if(clear>=stable){out.textContent='Условие пункта 5.28 выполнено';out.style.color='var(--ok)';warn.textContent='Отверстие в свету не меньше устойчивой ширины русла. Учтите и остальные факторы пункта 5.28.';}
+ else{out.textContent='Условие пункта 5.28 не выполнено';out.style.color='var(--err)';warn.textContent='Отверстие в свету меньше устойчивой ширины русла. Требуется пересмотреть проектное решение.';}
+ return {stable,clear,total,difference,ratio,conclusion:out.textContent};
+}
+async function saveRiverCheckToSheets(){
+ const x=calculateRiverNarrowing(), status=document.getElementById('riverSaveStatus');
+ if(!x){status.textContent='Исправьте ошибки перед сохранением.';status.style.color='var(--err)';return;}
+ const fields={'Устойчивая ширина русла, м':x.stable,'Отверстие моста в свету, м':x.clear,'Общая длина моста, м (справочно)':x.total===null?'':x.total,'Разница ширин, м':x.difference.toFixed(2),'Отношение отверстия к устойчивой ширине':x.ratio.toFixed(3),'Инженерное заключение':x.conclusion,'Нормативная основа':'СП 35.13330.2011, пункт 5.28'};
+ status.textContent='Отправка запроса...';
+ try{
+  await fetch('https://script.google.com/macros/s/AKfycbypI2MOIrYbZpvSE_swxMfiAESLfNbsZtoA_glwokrlZKrOk8Lfiw5ALCBM14oVirw/exec',{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({module:'ПЗ №27–30. Вариант 3. Сужение устойчивого русла',fields})});
+  status.textContent='Запрос отправлен. Проверьте строку в Google Таблице.';status.style.color='var(--ok)';
+ }catch(e){status.textContent='Ошибка отправки: '+e.message;status.style.color='var(--err)';}
+}
+
+</script>
+</body>
+</html>
